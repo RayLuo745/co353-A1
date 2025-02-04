@@ -1,0 +1,119 @@
+import sys
+import heapq
+from collections import defaultdict
+
+# Dijkstra's Algorithm to find shortest paths from root r (start)
+# Time complexity: for each edges m, perform heappush and heappop which takes O(log n) time so a total of O((m + n)log n).
+import sys
+import heapq
+from collections import defaultdict
+
+# Dijkstra's Algorithm to find shortest paths from root r (start)
+# Time complexity: for each edges m, perform heappush and heappop which takes O(log n) time so a total of O((m + n)log n).
+def dijkstra(graph, start, n):
+    dist = [float('inf')] * n # Set the distance of all other vertices as infinity (not discovered yet) 
+    dist[start] = 0  # Initiates the distance to the source node r
+    heap = [(0, start)] # Create a priority queue (min-heap) that selects the vertice with the smallest known distance   
+
+    while heap:
+        d, u = heapq.heappop(heap) # Pops current distance from the heap for vertex u
+        if d > dist[u]: 
+            # Checks if cur dist is greater than the known shortest dist (Ensures only shortest paths)
+            continue
+        for v, w in graph[u]:
+            # Checks if a shorter path to neighbor v is found through vertex u
+            # If so, it updates the shortest distance to 'v' and adds it back to the heap
+            if dist[v] > d + w:
+                dist[v] = d + w
+                heapq.heappush(heap, (dist[v], v))
+
+    return dist # Returns shortest paths from root
+
+# Union-Find (Disjoint Set Union) data structure to manage connected components
+# Time Complexity: O(m)
+class UnionFind:
+    def __init__(self, size):
+        self.parent = list(range(size))  # Each vertex is initially its own parent (self-rooted)
+        self.rank = [0] * size           # Rank is used for union by rank optimization
+
+    def find(self, u):
+        # This function finds the root (representative) of the set that u belongs to
+        if self.parent[u] != u:
+            # If 'u' is not its own parent, recursively find the root
+            # Connects u to its root to flatten the tree
+            self.parent[u] = self.find(self.parent[u])
+        return self.parent[u]  # Return the root of the set
+        
+    def union(self, u, v):
+        root_u = self.find(u)
+        root_v = self.find(v)
+        # If both nodes have the same root, adding the edge would form a cycle
+        if root_u == root_v:
+            return False
+        # Union by rank optimization: attach the smaller tree under the larger one
+        if self.rank[root_u] > self.rank[root_v]:
+            self.parent[root_v] = root_u
+        else:
+            self.parent[root_u] = root_v
+            if self.rank[root_u] == self.rank[root_v]:
+                self.rank[root_v] += 1
+        return True
+      
+# Kruskal's Algorithm for Minimum/Maximum Spanning Tree
+# Time Complexity: O(mlog m) in course notes
+def kruskal(edges, n, maximize=False):
+    uf = UnionFind(n)
+    total_closeness = 0
+
+    # Sort edges by closeness
+    # For minimum spanning tree, sort in ascending order
+    # For maximum spanning tree, sort in descending order (reverse=True)
+    edges.sort(key=lambda x: x[2], reverse=maximize)
+
+    for u, v, closeness in edges:
+        # Add the edge if it connects two different components (avoids cycles)
+        if uf.union(u, v):
+            total_closeness += closeness  # Add closeness of the edge to the total
+
+    return total_closeness
+
+# Final Time Complexity: O(m log n)
+def main():
+# Reads the input data n, m, r
+# I'm assuming that the input will be given as an array? Can change easily if input is diff.
+    input = [1,0,0,1,0,0] # Manual testing
+    # USE THIS AS REAL INPUT TO TEST ALL CASES GIVEN: input = sys.stdin.read
+    
+    if input == []: # edge case if input is empty or contains 0 vertices
+        print("invalid")
+        return 0
+        
+    idx = 0
+    n, m, r = input[idx], input[idx+1], input[idx+2]
+    idx += 3
+
+    graph = defaultdict(list) 
+    edges = []
+    
+    for _ in range(m): # runs for m edges times, _ as throwaway variable to create the graph
+        u, v, w = input[idx], input[idx+1], input[idx+2]
+        idx += 3
+        graph[u].append((v, w))
+        graph[v].append((u, w))
+        edges.append((u, v, w))
+
+    # Step 1: Get shortest paths from r
+    dist = dijkstra(graph, r, n)
+
+    # Step 2: Calculate closeness for each edge
+    closeness_edges = [(u, v, min(dist[u], dist[v])) for u, v, w in edges]
+
+    # Step 3: Find Minimum and Maximum Closeness Spanning Trees using Kruskal's Algorithm
+    min_closeness = kruskal(closeness_edges, n, maximize=False)  # Minimum spanning tree
+    max_closeness = kruskal(closeness_edges, n, maximize=True)   # Maximum spanning tree
+    
+    print(min_closeness, max_closeness)
+    return(min_closeness, max_closeness)
+    
+if __name__ == "__main__":
+    main()
