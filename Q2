@@ -1,1 +1,73 @@
 
+class DisjointUnionSets:
+    def __init__(self, n):
+        self.rank = [1] * n
+        self.parent = list(range(n))
+
+    def find(self, x):
+        if self.parent[x] != x:
+            self.parent[x] = self.find(self.parent[x])
+        return self.parent[x]
+
+    def unionSets(self, x, y):
+        xRoot = self.find(x)
+        yRoot = self.find(y)
+
+        if xRoot == yRoot:
+            return
+
+        if self.rank[xRoot] < self.rank[yRoot]:
+            self.parent[xRoot] = yRoot
+        elif self.rank[yRoot] < self.rank[xRoot]:
+            self.parent[yRoot] = xRoot
+        else:
+            self.parent[yRoot] = xRoot
+            self.rank[xRoot] += 1
+
+def count_vertices(edges):
+    vertex_set = set()
+    for u, v, c in edges:
+        vertex_set.add(u)
+        vertex_set.add(v)
+    return vertex_set
+
+def find_minimum_cost_tree(n, k, edges):
+    cost1_edges = []
+    dsu = DisjointUnionSets(n)
+    for u, v, c in edges:
+        if c == 1:
+            cost1_edges.append((u, v, c))
+            dsu.unionSets(u, v)
+    added = False
+    cost1_vertices = count_vertices(cost1_edges)
+    lv = []
+    for v in cost1_vertices:
+        for subset in lv:
+            if dsu.find(v) == dsu.find(list(subset)[0]):
+                subset.add(v)
+                added = True
+                break
+        if not added:
+            lv.append(set([v]))
+        else:
+            added = False
+    com_length = [(len(subset) - 1) for subset in lv]
+    com_length.sort()
+    con_len = 0
+    for i in com_length:
+        if k <= i:
+            return con_len + k
+        else: 
+            con_len += i+2
+            k = k - i -1
+    return con_len + k*2
+
+
+def main():
+    n, k = map(int, input().split())
+    edges = [tuple(map(int, input().split())) for _ in range(k)]
+    print(find_minimum_cost_tree(n, k, edges))
+    return(find_minimum_cost_tree(n, k, edges))
+
+if __name__ == "__main__":
+    main()
